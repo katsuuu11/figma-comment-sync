@@ -3,7 +3,7 @@ const {
   AutoLayout,
   Text,
   Input,
-  useEffect,
+  waitForTask,
   useSyncedState,
 } = widget;
 
@@ -96,50 +96,46 @@ function AnnotationWidget() {
   const [createdAt, setCreatedAt] = useSyncedState('createdAt', '');
   const [updatedAt, setUpdatedAt] = useSyncedState('updatedAt', '');
 
-  const [membersCsv, setMembersCsv] = useSyncedState('membersCsv', '');
-  const [endpointUrl, setEndpointUrl] = useSyncedState('endpointUrl', '');
-
-  useEffect(() => {
-    const cfg = parseConfig();
-    setMembersCsv(cfg.members.join(','));
-    setEndpointUrl(cfg.endpointUrl);
-  }, []);
-
-  const members = membersCsv ? membersCsv.split(',').filter(Boolean) : [];
   const fill = TYPE_COLOR[type] || '#F1F1F1';
 
-  const onSave = async () => {
-    if (!endpointUrl) {
-      figma.notify('先にプラグインでApps Script URLを設定してください');
-      return;
-    }
+  const onSave = () => {
+    waitForTask(
+      (async () => {
+        const cfg = parseConfig();
+        const url = cfg.endpointUrl;
+        if (!url) {
+          figma.notify('先にプラグインでApps Script URLを設定してください');
+          return;
+        }
+        const now = new Date().toISOString();
+        const nodeId = figma.widgetId;
+        const node = figma.getNodeById(nodeId) as SceneNode | null;
 
-    const now = new Date().toISOString();
-    if (!createdAt) setCreatedAt(now);
-    setUpdatedAt(now);
+        if (!createdAt) setCreatedAt(now);
+        setUpdatedAt(now);
 
-    const nodeId = figma.widgetId;
-    const node = figma.getNodeById(nodeId) as SceneNode | null;
-    const payload = {
-      id: nodeId,
-      type,
-      status,
-      body,
-      author,
-      reviewer,
-      page: figma.currentPage.name,
-      frame: closestFrameName(node),
-      createdAt: createdAt || now,
-      updatedAt: now,
-      figmaUrl: buildFigmaUrl(nodeId),
-    };
+        const payload = {
+          id: nodeId,
+          type,
+          status,
+          body,
+          author,
+          reviewer,
+          page: figma.currentPage.name,
+          frame: closestFrameName(node),
+          createdAt: createdAt || now,
+          updatedAt: now,
+          figmaUrl: buildFigmaUrl(nodeId),
+        };
 
-    try {
-      await postPayload(endpointUrl, payload);
-      figma.notify('Google Sheetsへ保存しました');
-    } catch (error) {
-      figma.notify(`保存失敗: ${error}`);
-    }
+        try {
+          await postPayload(url, payload);
+          figma.notify('Google Sheetsへ保存しました');
+        } catch (error) {
+          figma.notify(`保存失敗: ${error}`);
+        }
+      })()
+    );
   };
 
   return (
@@ -189,8 +185,9 @@ function AnnotationWidget() {
           cornerRadius={6}
           padding={{ horizontal: 8, vertical: 6 }}
           onClick={() => {
-            if (!members.length) return;
-            setAuthor(nextValue(members as readonly string[], author || members[0]));
+            const options = Array.from(new Set([author, reviewer].filter(Boolean)));
+            if (!options.length) return;
+            setAuthor(nextValue(options as readonly string[], author || options[0]));
           }}
         >
           <Text fontSize={12}>作成者: {author || '未設定'}</Text>
@@ -201,8 +198,9 @@ function AnnotationWidget() {
           cornerRadius={6}
           padding={{ horizontal: 8, vertical: 6 }}
           onClick={() => {
-            if (!members.length) return;
-            setReviewer(nextValue(members as readonly string[], reviewer || members[0]));
+            const options = Array.from(new Set([author, reviewer].filter(Boolean)));
+            if (!options.length) return;
+            setReviewer(nextValue(options as readonly string[], reviewer || options[0]));
           }}
         >
           <Text fontSize={12}>確認者: {reviewer || '未設定'}</Text>
@@ -214,9 +212,7 @@ function AnnotationWidget() {
         cornerRadius={8}
         padding={{ horizontal: 12, vertical: 8 }}
         horizontalAlignItems="center"
-        onClick={() => {
-          void onSave();
-        }}
+        onClick={onSave}
       >
         <Text fill="#fff" fontSize={12} fontWeight={600}>保存</Text>
       </AutoLayout>
