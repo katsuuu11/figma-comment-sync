@@ -88,7 +88,7 @@ function nextValue<T extends readonly string[]>(options: T, current: string): st
 function AnnotationWidget() {
   const cfg = parseConfig();
 
-  const [id] = useSyncedState('id', figma.widgetId);
+  const [id, setId] = useSyncedState('id', '');
   const [type, setType] = useSyncedState('type', '仕様');
   const [status, setStatus] = useSyncedState('status', '未対応');
   const [body, setBody] = useSyncedState('body', '');
@@ -113,9 +113,10 @@ function AnnotationWidget() {
     if (!createdAt) setCreatedAt(now);
     setUpdatedAt(now);
 
-    const node = figma.getNodeById(figma.widgetId) as SceneNode | null;
+    const nodeId = figma.widgetId;
+    const node = figma.getNodeById(nodeId) as SceneNode | null;
     const payload = {
-      id,
+      id: nodeId,
       type,
       status,
       body,
@@ -125,7 +126,7 @@ function AnnotationWidget() {
       frame: closestFrameName(node),
       createdAt: createdAt || now,
       updatedAt: now,
-      figmaUrl: buildFigmaUrl(figma.widgetId),
+      figmaUrl: buildFigmaUrl(nodeId),
     };
 
     try {
