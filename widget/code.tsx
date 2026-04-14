@@ -3,6 +3,7 @@ const {
   AutoLayout,
   Text,
   Input,
+  useEffect,
   useSyncedState,
 } = widget;
 
@@ -86,8 +87,6 @@ function nextValue<T extends readonly string[]>(options: T, current: string): st
 }
 
 function AnnotationWidget() {
-  const cfg = parseConfig();
-
   const [id, setId] = useSyncedState('id', '');
   const [type, setType] = useSyncedState('type', '仕様');
   const [status, setStatus] = useSyncedState('status', '未対応');
@@ -97,8 +96,14 @@ function AnnotationWidget() {
   const [createdAt, setCreatedAt] = useSyncedState('createdAt', '');
   const [updatedAt, setUpdatedAt] = useSyncedState('updatedAt', '');
 
-  const [membersCsv, setMembersCsv] = useSyncedState('membersCsv', cfg.members.join(','));
-  const [endpointUrl, setEndpointUrl] = useSyncedState('endpointUrl', cfg.endpointUrl);
+  const [membersCsv, setMembersCsv] = useSyncedState('membersCsv', '');
+  const [endpointUrl, setEndpointUrl] = useSyncedState('endpointUrl', '');
+
+  useEffect(() => {
+    const cfg = parseConfig();
+    setMembersCsv(cfg.members.join(','));
+    setEndpointUrl(cfg.endpointUrl);
+  }, []);
 
   const members = membersCsv ? membersCsv.split(',').filter(Boolean) : [];
   const fill = TYPE_COLOR[type] || '#F1F1F1';
