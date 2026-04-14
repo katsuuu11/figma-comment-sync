@@ -4,8 +4,6 @@ const {
   Text,
   Input,
   useSyncedState,
-  useEffect,
-  waitForTask,
 } = widget;
 
 const NS = 'figma_annotation';
@@ -88,6 +86,8 @@ function nextValue<T extends readonly string[]>(options: T, current: string): st
 }
 
 function AnnotationWidget() {
+  const cfg = parseConfig();
+
   const [id] = useSyncedState('id', figma.widgetId);
   const [type, setType] = useSyncedState('type', '仕様');
   const [status, setStatus] = useSyncedState('status', '未対応');
@@ -97,55 +97,43 @@ function AnnotationWidget() {
   const [createdAt, setCreatedAt] = useSyncedState('createdAt', '');
   const [updatedAt, setUpdatedAt] = useSyncedState('updatedAt', '');
 
-  const [membersCsv, setMembersCsv] = useSyncedState('membersCsv', '');
-  const [endpointUrl, setEndpointUrl] = useSyncedState('endpointUrl', '');
-
-  useEffect(() => {
-    const cfg = parseConfig();
-    setMembersCsv(cfg.members.join(','));
-    setEndpointUrl(cfg.endpointUrl);
-    if (!author && cfg.members.length > 0) setAuthor(cfg.members[0]);
-    if (!reviewer && cfg.members.length > 0) setReviewer(cfg.members[0]);
-  });
+  const [membersCsv, setMembersCsv] = useSyncedState('membersCsv', cfg.members.join(','));
+  const [endpointUrl, setEndpointUrl] = useSyncedState('endpointUrl', cfg.endpointUrl);
 
   const members = membersCsv ? membersCsv.split(',').filter(Boolean) : [];
   const fill = TYPE_COLOR[type] || '#F1F1F1';
 
-  const onSave = () => {
-    waitForTask(
-      (async () => {
-        if (!endpointUrl) {
-          figma.notify('先にプラグインでApps Script URLを設定してください');
-          return;
-        }
+  const onSave = async () => {
+    if (!endpointUrl) {
+      figma.notify('先にプラグインでApps Script URLを設定してください');
+      return;
+    }
 
-        const now = new Date().toISOString();
-        if (!createdAt) setCreatedAt(now);
-        setUpdatedAt(now);
+    const now = new Date().toISOString();
+    if (!createdAt) setCreatedAt(now);
+    setUpdatedAt(now);
 
-        const node = figma.getNodeById(figma.widgetId) as SceneNode | null;
-        const payload = {
-          id,
-          type,
-          status,
-          body,
-          author,
-          reviewer,
-          page: figma.currentPage.name,
-          frame: closestFrameName(node),
-          createdAt: createdAt || now,
-          updatedAt: now,
-          figmaUrl: buildFigmaUrl(figma.widgetId),
-        };
+    const node = figma.getNodeById(figma.widgetId) as SceneNode | null;
+    const payload = {
+      id,
+      type,
+      status,
+      body,
+      author,
+      reviewer,
+      page: figma.currentPage.name,
+      frame: closestFrameName(node),
+      createdAt: createdAt || now,
+      updatedAt: now,
+      figmaUrl: buildFigmaUrl(figma.widgetId),
+    };
 
-        try {
-          await postPayload(endpointUrl, payload);
-          figma.notify('Google Sheetsへ保存しました');
-        } catch (error) {
-          figma.notify(`保存失敗: ${error}`);
-        }
-      })()
-    );
+    try {
+      await postPayload(endpointUrl, payload);
+      figma.notify('Google Sheetsへ保存しました');
+    } catch (error) {
+      figma.notify(`保存失敗: ${error}`);
+    }
   };
 
   return (
@@ -220,7 +208,9 @@ function AnnotationWidget() {
         cornerRadius={8}
         padding={{ horizontal: 12, vertical: 8 }}
         horizontalAlignItems="center"
-        onClick={onSave}
+        onClick={() => {
+          void onSave();
+        }}
       >
         <Text fill="#fff" fontSize={12} fontWeight={600}>保存</Text>
       </AutoLayout>
