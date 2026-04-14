@@ -1,0 +1,10 @@
+{
+  "name": "annotation-sticky-widget",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npx esbuild code.tsx --bundle --outfile=code.js --platform=browser --target=es6"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  }
+}
