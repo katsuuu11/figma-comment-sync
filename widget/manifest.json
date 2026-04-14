@@ -1,0 +1,12 @@
+{
+  "name": "Annotation Sticky Widget",
+  "id": "annotation-sticky-widget",
+  "api": "1.0.0",
+  "main": "code.js",
+  "widgetApi": "1.0.0",
+  "editorType": ["figma"],
+  "ui": "fetch-proxy.html",
+  "networkAccess": {
+    "allowedDomains": ["*"]
+  }
+}

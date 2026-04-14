@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+  <body>
+    <script>
+      window.onmessage = async (event) => {
+        const msg = event.data.pluginMessage;
+        if (!msg || msg.type !== 'fetch-post') return;
+        try {
+          const res = await fetch(msg.endpointUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(msg.payload),
+          });
+          parent.postMessage(
+            { pluginMessage: { type: 'fetch-result', ok: res.ok, status: res.status } },
+            '*'
+          );
+        } catch (error) {
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: 'fetch-result',
+                ok: false,
+                error: error && error.message ? error.message : String(error),
+              },
+            },
+            '*'
+          );
+        }
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "Annotation Config",
+  "id": "annotation-config-plugin",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"],
+  "ui": "ui.html"
+}
