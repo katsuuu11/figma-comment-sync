@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Annotation Config</title>
+    <style>
+      body { font: 12px sans-serif; margin: 16px; }
+      h2 { margin: 16px 0 8px; }
+      .row { display: flex; gap: 8px; }
+      input { width: 100%; padding: 8px; box-sizing: border-box; }
+      button { padding: 8px 12px; }
+      ul { list-style: none; margin: 8px 0 0; padding: 0; }
+      li { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee; }
+      .footer { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; }
+    </style>
+  </head>
+  <body>
+    <h2>メンバー設定</h2>
+    <div class="row">
+      <input id="memberInput" placeholder="名前を入力" />
+      <button id="addBtn">追加</button>
+    </div>
+    <ul id="memberList"></ul>
+
+    <h2>Apps Script URL</h2>
+    <input id="endpointInput" placeholder="https://script.google.com/macros/s/.../exec" />
+
+    <div class="footer">
+      <button id="cancelBtn">閉じる</button>
+      <button id="saveBtn">保存</button>
+    </div>
+
+    <script>
+      let state = { endpointUrl: '', members: [] };
+
+      const memberInput = document.getElementById('memberInput');
+      const endpointInput = document.getElementById('endpointInput');
+      const memberList = document.getElementById('memberList');
+
+      function render() {
+        endpointInput.value = state.endpointUrl;
+        memberList.innerHTML = '';
+        state.members.forEach((member, index) => {
+          const li = document.createElement('li');
+          li.textContent = member;
+
+          const remove = document.createElement('button');
+          remove.textContent = '削除';
+          remove.addEventListener('click', () => {
+            state.members.splice(index, 1);
+            render();
+          });
+
+          li.appendChild(remove);
+          memberList.appendChild(li);
+        });
+      }
+
+      document.getElementById('addBtn').addEventListener('click', () => {
+        const name = memberInput.value.trim();
+        if (!name) return;
+        if (!state.members.includes(name)) {
+          state.members.push(name);
+        }
+        memberInput.value = '';
+        render();
+      });
+
+      document.getElementById('saveBtn').addEventListener('click', () => {
+        state.endpointUrl = endpointInput.value.trim();
+        parent.postMessage({ pluginMessage: { type: 'save-config', config: state } }, '*');
+      });
+
+      document.getElementById('cancelBtn').addEventListener('click', () => {
+        parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+      });
+
+      window.onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+        if (!msg) return;
+
+        if (msg.type === 'init' || msg.type === 'saved') {
+          state = {
+            endpointUrl: msg.config?.endpointUrl || '',
+            members: Array.isArray(msg.config?.members) ? msg.config.members : [],
+          };
+          render();
+        }
+      };
+    </script>
+  </body>
+</html>
