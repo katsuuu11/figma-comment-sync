@@ -166,9 +166,13 @@ function AnnotationWidget() {
           cornerRadius={6}
           padding={{ horizontal: 8, vertical: 6 }}
           onClick={() => {
-            const options = Array.from(new Set([author, reviewer].filter(Boolean)));
-            if (!options.length) return;
-            setAuthor(nextValue(options as readonly string[], author || options[0]));
+            const cfg = parseConfig();
+            const members = cfg.members;
+            if (!members.length) {
+              figma.notify('先にプラグインでメンバーを設定してください');
+              return;
+            }
+            setAuthor(nextValue(members as readonly string[], author || members[0]));
           }}
         >
           <Text fontSize={12}>作成者: {author || '未設定'}</Text>
@@ -179,9 +183,13 @@ function AnnotationWidget() {
           cornerRadius={6}
           padding={{ horizontal: 8, vertical: 6 }}
           onClick={() => {
-            const options = Array.from(new Set([author, reviewer].filter(Boolean)));
-            if (!options.length) return;
-            setReviewer(nextValue(options as readonly string[], reviewer || options[0]));
+            const cfg = parseConfig();
+            const members = cfg.members;
+            if (!members.length) {
+              figma.notify('先にプラグインでメンバーを設定してください');
+              return;
+            }
+            setReviewer(nextValue(members as readonly string[], reviewer || members[0]));
           }}
         >
           <Text fontSize={12}>確認者: {reviewer || '未設定'}</Text>
