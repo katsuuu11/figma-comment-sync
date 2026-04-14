@@ -54,31 +54,12 @@ function buildFigmaUrl(nodeId: string): string {
 }
 
 async function postPayload(endpointUrl: string, payload: Record<string, unknown>) {
-  if (typeof fetch === 'function') {
-    return fetch(endpointUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  }
-
-  return new Promise<void>((resolve, reject) => {
-    figma.showUI(__html__, { visible: false, width: 1, height: 1 });
-    const timeout = setTimeout(() => reject(new Error('Fetch timeout')), 15000);
-
-    figma.ui.onmessage = (msg) => {
-      if (msg.type === 'fetch-result') {
-        clearTimeout(timeout);
-        if (msg.ok) {
-          resolve();
-        } else {
-          reject(new Error(msg.error || 'Fetch failed via iframe'));
-        }
-      }
-    };
-
-    figma.ui.postMessage({ type: 'fetch-post', endpointUrl, payload });
+  const res = await fetch(endpointUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload),
   });
+  return res;
 }
 
 function nextValue<T extends readonly string[]>(options: T, current: string): string {
