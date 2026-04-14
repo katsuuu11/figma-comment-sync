@@ -28,13 +28,13 @@ figma.ui.postMessage({ type: 'init', config: readConfig() });
 
 figma.ui.onmessage = (msg) => {
   if (msg.type === 'save-config') {
-    const members = Array.isArray(msg.config?.members)
+    const members = Array.isArray(msg.config && msg.config.members)
       ? msg.config.members
           .map((name) => String(name).trim())
           .filter(Boolean)
       : [];
 
-    const endpointUrl = typeof msg.config?.endpointUrl === 'string' ? msg.config.endpointUrl.trim() : '';
+    const endpointUrl = typeof (msg.config && msg.config.endpointUrl) === 'string' ? msg.config.endpointUrl.trim() : '';
 
     saveConfig({ endpointUrl, members });
     figma.notify('設定を保存しました');
