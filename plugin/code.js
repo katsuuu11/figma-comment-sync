@@ -1,4 +1,4 @@
-const NS = 'figma-annotation';
+const NS = 'figma_annotation';
 const KEY = 'config';
 
 figma.showUI(__html__, { width: 420, height: 520 });

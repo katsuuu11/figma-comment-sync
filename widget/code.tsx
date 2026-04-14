@@ -8,7 +8,7 @@ const {
   waitForTask,
 } = widget;
 
-const NS = 'figma-annotation';
+const NS = 'figma_annotation';
 const CONFIG_KEY = 'config';
 
 const TYPES = ['仕様', '修正', '確認'] as const;
