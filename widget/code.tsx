@@ -50,7 +50,7 @@ function closestFrameName(node: SceneNode | null): string {
 function buildFigmaUrl(nodeId: string): string {
   const fileKey = figma.fileKey ?? '';
   if (!fileKey) return '';
-  return `https://www.figma.com/file/${fileKey}?node-id=${encodeURIComponent(nodeId)}`;
+  return `https://www.figma.com/design/${fileKey}?node-id=${encodeURIComponent(nodeId)}`;
 }
 
 async function postPayload(endpointUrl: string, payload: Record<string, unknown>) {
