@@ -13,10 +13,31 @@ const CONFIG_KEY = 'config';
 const TYPES = ['仕様', '修正', '確認'] as const;
 const STATUS = ['未対応', '対応中', '完了'] as const;
 
-const TYPE_COLOR: Record<string, string> = {
-  仕様: '#DCEBFF',
-  修正: '#FFDCE0',
-  確認: '#FFF5CC',
+const TYPE_THEME: Record<string, { containerFill: string; containerStroke: string; badgeFill: string; badgeText: string }> = {
+  修正: {
+    containerFill: '#FFF0F2',
+    containerStroke: '#F4C0D1',
+    badgeFill: '#FFDCE0',
+    badgeText: '#993556',
+  },
+  仕様: {
+    containerFill: '#EFF4FF',
+    containerStroke: '#C7D7F5',
+    badgeFill: '#DCEBFF',
+    badgeText: '#185FA5',
+  },
+  確認: {
+    containerFill: '#FFFBEB',
+    containerStroke: '#F5E0A0',
+    badgeFill: '#FFF5CC',
+    badgeText: '#854F0B',
+  },
+};
+
+const STATUS_THEME: Record<string, { fill: string; text: string }> = {
+  未対応: { fill: '#FAEEDA', text: '#854F0B' },
+  対応中: { fill: '#E6F1FB', text: '#185FA5' },
+  完了: { fill: '#EAF3DE', text: '#3B6D11' },
 };
 
 type Config = {
@@ -77,7 +98,8 @@ function AnnotationWidget() {
   const [createdAt, setCreatedAt] = useSyncedState('createdAt', '');
   const [updatedAt, setUpdatedAt] = useSyncedState('updatedAt', '');
 
-  const fill = TYPE_COLOR[type] || '#F1F1F1';
+  const typeTheme = TYPE_THEME[type] || TYPE_THEME['仕様'];
+  const statusTheme = STATUS_THEME[status] || STATUS_THEME['未対応'];
 
   const onSave = () => {
     waitForTask(
@@ -135,33 +157,42 @@ function AnnotationWidget() {
     <AutoLayout
       name="annotation-sticky"
       direction="vertical"
-      fill={fill}
-      cornerRadius={12}
-      stroke="#B8B8B8"
+      fill={typeTheme.containerFill}
+      cornerRadius={14}
+      stroke={typeTheme.containerStroke}
       padding={12}
       spacing={10}
       width={340}
     >
       <AutoLayout width="fill-parent" spacing={8}>
         <AutoLayout
-          fill="#fff"
-          cornerRadius={6}
-          padding={{ horizontal: 8, vertical: 6 }}
+          fill={typeTheme.badgeFill}
+          cornerRadius={20}
+          padding={{ horizontal: 10, vertical: 4 }}
           onClick={() => setType(nextValue(TYPES, type))}
         >
-          <Text fontSize={12}>注釈タイプ: {type}</Text>
+          <Text fontSize={11} fill={typeTheme.badgeText}>{type}</Text>
         </AutoLayout>
         <AutoLayout
-          fill="#fff"
-          cornerRadius={6}
-          padding={{ horizontal: 8, vertical: 6 }}
+          fill={statusTheme.fill}
+          cornerRadius={20}
+          padding={{ horizontal: 10, vertical: 4 }}
           onClick={() => setStatus(nextValue(STATUS, status))}
         >
-          <Text fontSize={12}>ステータス: {status}</Text>
+          <Text fontSize={11} fill={statusTheme.text}>{status}</Text>
         </AutoLayout>
       </AutoLayout>
 
-      <AutoLayout fill="#fff" cornerRadius={8} padding={8} width="fill-parent" minHeight={80}>
+      <AutoLayout width="fill-parent" height={1} fill="#E7E7E7" />
+
+      <AutoLayout
+        fill="#FFFFFF"
+        cornerRadius={8}
+        stroke="#E8E8E8"
+        padding={8}
+        width="fill-parent"
+        minHeight={80}
+      >
         <Input
           value={body}
           placeholder="本文を入力"
@@ -172,11 +203,15 @@ function AnnotationWidget() {
         />
       </AutoLayout>
 
+      <AutoLayout width="fill-parent" height={1} fill="#E7E7E7" />
+
       <AutoLayout width="fill-parent" spacing={8} verticalAlignItems="center">
+        <Text fontSize={10} fill="#6B6B6B">作成者</Text>
         <AutoLayout
-          fill="#fff"
-          cornerRadius={6}
-          padding={{ horizontal: 8, vertical: 6 }}
+          fill="#FFFFFF"
+          stroke="#E8E8E8"
+          cornerRadius={20}
+          padding={{ horizontal: 10, vertical: 4 }}
           onClick={() => {
             const cfg = parseConfig();
             const members = cfg.members;
@@ -187,13 +222,17 @@ function AnnotationWidget() {
             setAuthor(nextValue(members as readonly string[], author || members[0]));
           }}
         >
-          <Text fontSize={12}>作成者: {author || '未設定'}</Text>
+          <Text fontSize={11}>{author || '未設定'}</Text>
         </AutoLayout>
+      </AutoLayout>
 
+      <AutoLayout width="fill-parent" spacing={8} verticalAlignItems="center">
+        <Text fontSize={10} fill="#6B6B6B">確認者</Text>
         <AutoLayout
-          fill="#fff"
-          cornerRadius={6}
-          padding={{ horizontal: 8, vertical: 6 }}
+          fill="#FFFFFF"
+          stroke="#E8E8E8"
+          cornerRadius={20}
+          padding={{ horizontal: 10, vertical: 4 }}
           onClick={() => {
             const cfg = parseConfig();
             const members = cfg.members;
@@ -204,18 +243,22 @@ function AnnotationWidget() {
             setReviewer(nextValue(members as readonly string[], reviewer || members[0]));
           }}
         >
-          <Text fontSize={12}>確認者: {reviewer || '未設定'}</Text>
+          <Text fontSize={11}>{reviewer || '未設定'}</Text>
         </AutoLayout>
       </AutoLayout>
 
-      <AutoLayout
-        fill="#1F6FEB"
-        cornerRadius={8}
-        padding={{ horizontal: 12, vertical: 8 }}
-        horizontalAlignItems="center"
-        onClick={onSave}
-      >
-        <Text fill="#fff" fontSize={12} fontWeight={600}>保存</Text>
+      <AutoLayout width="fill-parent" height={1} fill="#E7E7E7" />
+
+      <AutoLayout width="fill-parent" horizontalAlignItems="end">
+        <AutoLayout
+          fill="#111111"
+          cornerRadius={20}
+          padding={{ horizontal: 12, vertical: 6 }}
+          horizontalAlignItems="center"
+          onClick={onSave}
+        >
+          <Text fill="#FFFFFF" fontSize={11} fontWeight={600}>保存</Text>
+        </AutoLayout>
       </AutoLayout>
     </AutoLayout>
   );
