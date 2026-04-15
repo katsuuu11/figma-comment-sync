@@ -40,6 +40,51 @@ const STATUS_THEME: Record<string, { fill: string; text: string }> = {
   完了: { fill: '#EAF3DE', text: '#3B6D11' },
 };
 
+const MEMBER_SELECT_HTML = `<!doctype html>
+<html>
+  <body style="margin:0; font-family: Inter, system-ui, sans-serif;">
+    <div style="padding: 12px;">
+      <div id="title" style="font-size: 12px; font-weight: 600; margin-bottom: 8px;"></div>
+      <div id="members" style="display:flex; flex-direction: column; gap: 6px;"></div>
+    </div>
+
+    <script>
+      function render(payload) {
+        const title = document.getElementById('title');
+        const members = document.getElementById('members');
+
+        title.textContent = payload.label + 'を選択';
+        members.innerHTML = '';
+
+        payload.members.forEach((name) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = name;
+          button.style.border = '1px solid #E1E1E1';
+          button.style.background = name === payload.current ? '#F3F8FF' : '#FFFFFF';
+          button.style.padding = '6px 8px';
+          button.style.textAlign = 'left';
+          button.style.borderRadius = '6px';
+          button.style.cursor = 'pointer';
+          button.onclick = () => {
+            parent.postMessage(
+              { pluginMessage: { type: 'member-selected', role: payload.role, value: name } },
+              '*'
+            );
+          };
+          members.appendChild(button);
+        });
+      }
+
+      window.onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+        if (!msg || msg.type !== 'member-select-open') return;
+        render(msg);
+      };
+    </script>
+  </body>
+</html>`;
+
 type Config = {
   endpointUrl: string;
   members: string[];
@@ -86,6 +131,30 @@ async function postPayload(endpointUrl: string, payload: Record<string, unknown>
 function nextValue<T extends readonly string[]>(options: T, current: string): string {
   const i = options.indexOf(current as T[number]);
   return options[(i + 1) % options.length];
+}
+
+type MemberRole = 'author' | 'reviewer';
+
+function selectMember(role: MemberRole, label: string, current: string, members: string[]): Promise<string | null> {
+  return new Promise((resolve) => {
+    const height = Math.min(52 + members.length * 36, 260);
+
+    figma.showUI(MEMBER_SELECT_HTML, { width: 220, height });
+
+    figma.ui.onmessage = (message) => {
+      if (!message || message.type !== 'member-selected' || message.role !== role) return;
+      figma.closePlugin();
+      resolve(typeof message.value === 'string' ? message.value : null);
+    };
+
+    figma.ui.postMessage({
+      type: 'member-select-open',
+      role,
+      label,
+      current,
+      members,
+    });
+  });
 }
 
 function AnnotationWidget() {
@@ -153,6 +222,33 @@ function AnnotationWidget() {
     );
   };
 
+  const onSelectPerson = (role: MemberRole) => {
+    waitForTask(
+      (async () => {
+        const cfg = parseConfig();
+        const members = cfg.members;
+        if (!members.length) {
+          figma.notify('先にプラグインでメンバーを設定してください');
+          return;
+        }
+
+        const selected = await selectMember(
+          role,
+          role === 'author' ? '作成者' : '確認者',
+          role === 'author' ? author : reviewer,
+          members
+        );
+
+        if (!selected) return;
+        if (role === 'author') {
+          setAuthor(selected);
+          return;
+        }
+        setReviewer(selected);
+      })()
+    );
+  };
+
   return (
     <AutoLayout
       name="annotation-sticky"
@@ -205,45 +301,31 @@ function AnnotationWidget() {
 
       <AutoLayout width="fill-parent" height={1} fill="#E7E7E7" />
 
-      <AutoLayout width="fill-parent" spacing={8} verticalAlignItems="center">
-        <Text fontSize={10} fill="#6B6B6B">作成者</Text>
-        <AutoLayout
-          fill="#FFFFFF"
-          stroke="#E8E8E8"
-          cornerRadius={20}
-          padding={{ horizontal: 10, vertical: 4 }}
-          onClick={() => {
-            const cfg = parseConfig();
-            const members = cfg.members;
-            if (!members.length) {
-              figma.notify('先にプラグインでメンバーを設定してください');
-              return;
-            }
-            setAuthor(nextValue(members as readonly string[], author || members[0]));
-          }}
-        >
-          <Text fontSize={11}>{author || '未設定'}</Text>
+      <AutoLayout width="fill-parent" spacing={12}>
+        <AutoLayout direction="vertical" width="fill-parent" spacing={6}>
+          <Text fontSize={10} fill="#6B6B6B">作成者</Text>
+          <AutoLayout
+            fill="#FFFFFF"
+            stroke="#E8E8E8"
+            cornerRadius={20}
+            padding={{ horizontal: 10, vertical: 4 }}
+            onClick={() => onSelectPerson('author')}
+          >
+            <Text fontSize={11}>{author || '未設定'}</Text>
+          </AutoLayout>
         </AutoLayout>
-      </AutoLayout>
 
-      <AutoLayout width="fill-parent" spacing={8} verticalAlignItems="center">
-        <Text fontSize={10} fill="#6B6B6B">確認者</Text>
-        <AutoLayout
-          fill="#FFFFFF"
-          stroke="#E8E8E8"
-          cornerRadius={20}
-          padding={{ horizontal: 10, vertical: 4 }}
-          onClick={() => {
-            const cfg = parseConfig();
-            const members = cfg.members;
-            if (!members.length) {
-              figma.notify('先にプラグインでメンバーを設定してください');
-              return;
-            }
-            setReviewer(nextValue(members as readonly string[], reviewer || members[0]));
-          }}
-        >
-          <Text fontSize={11}>{reviewer || '未設定'}</Text>
+        <AutoLayout direction="vertical" width="fill-parent" spacing={6}>
+          <Text fontSize={10} fill="#6B6B6B">確認者</Text>
+          <AutoLayout
+            fill="#FFFFFF"
+            stroke="#E8E8E8"
+            cornerRadius={20}
+            padding={{ horizontal: 10, vertical: 4 }}
+            onClick={() => onSelectPerson('reviewer')}
+          >
+            <Text fontSize={11}>{reviewer || '未設定'}</Text>
+          </AutoLayout>
         </AutoLayout>
       </AutoLayout>
 
