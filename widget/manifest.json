@@ -1,14 +1,18 @@
 {
-  "name": "Annotation Sticky Widget",
-  "id": "annotation-sticky-widget",
+  "name": "Annotation Sync",
+  "id": "figma-annotation-sync-widget",
   "api": "1.0.0",
   "main": "code.js",
   "containsWidget": true,
   "widgetApi": "1.0.0",
-  "editorType": ["figma"],
+  "editorType": [
+    "figma"
+  ],
   "ui": "fetch-proxy.html",
   "networkAccess": {
-    "allowedDomains": ["*"],
+    "allowedDomains": [
+      "*"
+    ],
     "reasoning": "Google Apps ScriptへPOSTするために外部通信が必要です"
   }
 }
