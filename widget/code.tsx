@@ -110,7 +110,19 @@ function AnnotationWidget() {
         };
 
         try {
-          await postPayload(url, payload);
+          const res = await postPayload(url, payload);
+          const text = await res.text();
+          let result;
+          try {
+            result = JSON.parse(text);
+          } catch {
+            figma.notify(`保存失敗: レスポンスがJSONではありません: ${text}`);
+            return;
+          }
+          if (!result.ok) {
+            figma.notify(`保存失敗: ${result.error || '不明なエラー'}`);
+            return;
+          }
           figma.notify('Google Sheetsへ保存しました');
         } catch (error) {
           figma.notify(`保存失敗: ${error}`);
