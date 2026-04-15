@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <body style="margin:0; font-family: Inter, system-ui, sans-serif;">
+    <div style="padding: 12px;">
+      <div id="title" style="font-size: 12px; font-weight: 600; margin-bottom: 8px;"></div>
+      <div id="members" style="display:flex; flex-direction: column; gap: 6px;"></div>
+    </div>
+
+    <script>
+      function render(payload) {
+        const title = document.getElementById('title');
+        const members = document.getElementById('members');
+
+        title.textContent = payload.label + 'を選択';
+        members.innerHTML = '';
+
+        payload.members.forEach((name) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = name;
+          button.style.border = '1px solid #E1E1E1';
+          button.style.background = name === payload.current ? '#F3F8FF' : '#FFFFFF';
+          button.style.padding = '6px 8px';
+          button.style.textAlign = 'left';
+          button.style.borderRadius = '6px';
+          button.style.cursor = 'pointer';
+          button.onclick = () => {
+            parent.postMessage(
+              { pluginMessage: { type: 'member-selected', role: payload.role, value: name } },
+              '*'
+            );
+          };
+          members.appendChild(button);
+        });
+      }
+
+      window.onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+        if (!msg || msg.type !== 'member-select-open') return;
+        render(msg);
+      };
+    </script>
+  </body>
+</html>
